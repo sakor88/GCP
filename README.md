@@ -1,5 +1,8 @@
 # GCP
-A Google Cloud Platform project for GCP Sabre 2023/24 class
+A Google Cloud Platform project for GCP Sabre 2023/24 class.
+
+The projets revolves around uploading a photo and getting recognized objects from cloud vision api in response
+
 
 ![plot](./diagram.png)
 
