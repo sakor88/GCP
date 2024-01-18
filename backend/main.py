@@ -9,9 +9,6 @@ cors = CORS(app)
 
 @app.route("/")
 def analyze_image():
-
-    print("KURWY JEBANE")
-
     ## Set CORS headers for the preflight request 
     if flask.request.method == 'OPTIONS':
 
