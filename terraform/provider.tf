@@ -1,11 +1,5 @@
 provider "google" {
-  project = ""
-}
-
-terraform {
-	required_providers {
-		google = {
-	    version = "~> 4.33.0"
-		}
-  }
+  credentials = file("account.json")
+  project     = "gcp-final-project-410222"
+  region      = "europe-west2" 
 }
