@@ -1,7 +1,7 @@
 resource "google_cloudfunctions_function" "tfer--gcp-final-project-410222-backend-0" {
   name    = "backend"
-  region = "europe-west2"
-  project = "gcp-final-project-410222"
+  region = "${var.region}"
+  project = "${var.project_id}"
   runtime     = "python310"
   entry_point = "analyze_image"
 
