@@ -7,77 +7,71 @@ from google.cloud import storage, vision
 app = flask.Flask(__name__)
 cors = CORS(app)
 
-@app.route("/")
-def analyze_image():
-    ## Set CORS headers for the preflight request 
-    if flask.request.method == 'OPTIONS':
+# Imports the Cloud Logging client library
+import google.cloud.logging
+import logging
 
-        ## Allows GET requests from any origin with the Content-Type
-        headers = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': ['POST','OPTIONS'],
-            'Access-Control-Allow-Headers': 'Content-Type',
-        }
+# Instantiates a client
+client = google.cloud.logging.Client()
 
-        return ('', 204, headers)
+client.setup_logging()
 
-    ## Set CORS headers for the main request
+
+@app.route("/", methods=["POST"])
+def analyze_image(request):
+
     headers = {
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': ['POST','OPTIONS'],
     }
 
-    return ("Hello World!", 200, headers)
+    image_name = request.form.get('fileName')
+    image_content = request.form.get('image')
 
 
-    # Get the image URL from the query parameter
-    data= flask.request.get_json()
-    image_name = data['image_name']
-
-    print(image_name)
-
-    # Validate if image name is provided
     if not image_name:
         return 'Error: Please provide an image name in the query parameter.', 400, headers
 
-    # Download the image from Cloud Storage
-    image_content = download_image_from_storage(image_name)
 
-    # Analyze the image using Google Cloud Vision API
-    detected_objects = detect_objects(image_content)
-
-    # Log the detected objects
-    print("Detected Objects:", detected_objects)
-
-    # Return the detected objects in the response
-    return json.dumps(detected_objects), 200, headers
-
-def download_image_from_storage(image_name):
-    # Replace 'your-bucket-name' with your actual Google Cloud Storage bucket name
-    bucket_name = 'image-storage-gcp-final-project-410222'
-
-    # Initialize the Cloud Storage client
-    storage_client = storage.Client()
-
-    # Get the bucket and blob
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(image_name)
-
-    # Download the image content
-    image_content = blob.download_as_text()
-
-    return image_content
-
-def detect_objects(image_content):
-    # Initialize the Cloud Vision API client
     client = vision.ImageAnnotatorClient()
-
-    # Create an image instance from the image content
     image = vision.Image(content=image_content)
+    response = client.face_detection(image=image)
+    faces = response.face_annotations
 
-    # Perform object detection
-    response = client.object_localization(image=image)
+    if response.error.message:
+        return ("Vision API error", 400, headers)
+    
+    likelihood_name = (
+        "UNKNOWN",
+        "VERY_UNLIKELY",
+        "UNLIKELY",
+        "POSSIBLE",
+        "LIKELY",
+        "VERY_LIKELY",
+    )
 
-    # Extract detected objects
-    detected_objects = [obj.name for obj in response.localized_object_annotations]
+    faces_json = []
 
-    return detected_objects
+    for face in faces:
+        anger_value = f"anger: {likelihood_name[face.anger_likelihood]}"
+        joy_value = f"joy: {likelihood_name[face.joy_likelihood]}"
+        surprise_value = f"surprise: {likelihood_name[face.surprise_likelihood]}"
+
+        vertices = [
+            f"({vertex.x},{vertex.y})" for vertex in face.bounding_poly.vertices
+        ]
+
+        face_bounds = "face bounds: {}".format(",".join(vertices))
+
+        face_data = {
+            "anger": anger_value,
+            "joy": joy_value,
+            "surprise": surprise_value,
+            "face_bounds": face_bounds
+        }
+
+        faces_json.append(face_data)
+
+    logging.info(faces_json)
+
+    return faces_json, 200, headers
