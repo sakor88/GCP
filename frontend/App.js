@@ -1,13 +1,18 @@
+// App.js
 import React from 'react';
-import ReactDOM from 'react-dom';
 import ImageUploader from './ImageUploader';
+import './App.css';
 
-const App = () => {
+function App() {
   return (
-    <div>
-      <ImageUploader />
+    <div className="App">
+      <header className="App-header">
+        <h1>Google Cloud Vision Facial Expression Evaluator</h1>
+        <ImageUploader />
+        <div id="objectResponse"></div>
+      </header>
     </div>
   );
-};
+}
 
-ReactDOM.render(<App />, document.getElementById('root'));
+export default App;
